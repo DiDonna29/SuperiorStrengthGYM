@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -27,6 +26,8 @@ interface ExerciseCardProps {
     reps: string;
     weight: string;
     addSet: string;
+    timeline: string;
+    volume: string;
   };
 }
 
@@ -45,7 +46,7 @@ export function ExerciseCard({ id, name, sets, onAddSet, onRemoveSet, translatio
   const volumePerExercise = sets.reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
 
   return (
-    <Card className="overflow-hidden border premium-shadow bg-card/50 backdrop-blur-sm group h-full flex flex-col">
+    <Card className="overflow-hidden border premium-shadow bg-card/50 backdrop-blur-sm group h-full flex flex-col transition-all hover:border-primary/20">
       <CardHeader className="p-0 border-b border-white/5">
         <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-3">
@@ -53,7 +54,7 @@ export function ExerciseCard({ id, name, sets, onAddSet, onRemoveSet, translatio
               <Dumbbell className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="font-headline text-lg font-bold tracking-tight text-foreground">
+              <CardTitle className="font-headline text-lg font-bold tracking-tight text-foreground truncate max-w-[150px] md:max-w-none">
                 {name}
               </CardTitle>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
@@ -112,12 +113,12 @@ export function ExerciseCard({ id, name, sets, onAddSet, onRemoveSet, translatio
           <div className="flex items-center justify-between text-[10px] font-black text-muted-foreground tracking-[0.2em] border-b pb-2">
             <div className="flex items-center gap-2">
               <History className="w-3.5 h-3.5" />
-              TIMELINE
+              {translations.timeline}
             </div>
-            <span>VOLUME</span>
+            <span>{translations.volume}</span>
           </div>
           
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide">
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
             <AnimatePresence mode="popLayout">
               {sets.slice().reverse().map((set, index) => (
                 <motion.div 

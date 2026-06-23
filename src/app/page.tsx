@@ -1,10 +1,10 @@
-
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { translations, type Language } from '@/lib/translations';
-import { ExerciseCard, type SetRecord } from '@/components/exercise-card';
+import { ExerciseCard } from '@/components/exercise-card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sun, 
@@ -12,42 +12,38 @@ import {
   Languages, 
   RotateCcw, 
   Flame, 
-  LayoutGrid, 
   Trophy,
   Activity,
   Dumbbell,
-  ArrowRight
+  ArrowRight,
+  LayoutGrid
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-type WorkoutData = {
-  [key: string]: SetRecord[];
-};
+import { workoutReducer, initialState, type WorkoutState } from '@/store/workout-reducer';
+import { EXERCISE_CATALOG, type MuscleGroup } from '@/lib/exercise-catalog';
 
 export default function TrackerPage() {
   const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [workout, setWorkout] = useState<WorkoutData>({});
+  const [activeGroup, setActiveGroup] = useState<MuscleGroup>('upper');
   const [mounted, setMounted] = useState(false);
+  
+  const [state, dispatch] = useReducer(workoutReducer, initialState);
 
   const t = translations[lang];
 
-  const exerciseIds = [
-    { id: 'benchPress', name: t.benchPress },
-    { id: 'pullUps', name: t.pullUps },
-    { id: 'shoulderPress', name: t.shoulderPress },
-    { id: 'latPulldown', name: t.latPulldown },
-    { id: 'bicepCurls', name: t.bicepCurls },
-    { id: 'tricepExtensions', name: t.tricepExtensions }
-  ];
-
   useEffect(() => {
     setMounted(true);
-    const savedWorkout = localStorage.getItem('ss-workout-v2');
+    const savedWorkout = localStorage.getItem('ss-workout-v3');
     const savedLang = localStorage.getItem('ss-lang');
     const savedTheme = localStorage.getItem('ss-theme');
 
-    if (savedWorkout) setWorkout(JSON.parse(savedWorkout));
+    if (savedWorkout) {
+      try {
+        dispatch({ type: 'LOAD_WORKOUT', state: JSON.parse(savedWorkout) });
+      } catch (e) {
+        console.error("Failed to load workout", e);
+      }
+    }
     if (savedLang) setLang(savedLang as Language);
     if (savedTheme) {
       setTheme(savedTheme as 'light' | 'dark');
@@ -57,9 +53,9 @@ export default function TrackerPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('ss-workout-v2', JSON.stringify(workout));
+      localStorage.setItem('ss-workout-v3', JSON.stringify(state));
     }
-  }, [workout, mounted]);
+  }, [state, mounted]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
@@ -74,34 +70,32 @@ export default function TrackerPage() {
     localStorage.setItem('ss-lang', nextLang);
   };
 
-  const addSet = (exerciseId: string, reps: number, weight: number) => {
-    const newSet: SetRecord = {
-      id: Math.random().toString(36).substr(2, 9),
-      reps,
-      weight
-    };
-    setWorkout(prev => ({
-      ...prev,
-      [exerciseId]: [...(prev[exerciseId] || []), newSet]
-    }));
+  const handleAddSet = (exerciseId: string, reps: number, weight: number) => {
+    dispatch({ type: 'ADD_SET', exerciseId, reps, weight });
   };
 
-  const removeSet = (exerciseId: string, setId: string) => {
-    setWorkout(prev => ({
-      ...prev,
-      [exerciseId]: prev[exerciseId].filter(s => s.id !== setId)
-    }));
+  const handleRemoveSet = (exerciseId: string, setId: string) => {
+    dispatch({ type: 'REMOVE_SET', exerciseId, setId });
   };
 
   const resetWorkout = () => {
     const message = lang === 'en' ? 'Clear session?' : '¿Limpiar sesión?';
     if (confirm(message)) {
-      setWorkout({});
+      dispatch({ type: 'RESET_WORKOUT' });
     }
   };
 
-  const totalVolume = Object.values(workout).flat().reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
-  const completedExercises = Object.values(workout).filter(sets => sets.length > 0).length;
+  const totalVolume = useMemo(() => {
+    return Object.values(state.exercises).flat().reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
+  }, [state.exercises]);
+
+  const completedExercisesCount = useMemo(() => {
+    return Object.keys(state.exercises).length;
+  }, [state.exercises]);
+
+  const filteredExercises = useMemo(() => {
+    return EXERCISE_CATALOG.filter(ex => ex.group === activeGroup);
+  }, [activeGroup]);
 
   if (!mounted) return null;
 
@@ -143,7 +137,7 @@ export default function TrackerPage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-4 lg:px-8 py-10">
-        {/* Stats Grid - Asymmetric Layout Variance */}
+        {/* Stats Grid */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <motion.div 
             whileHover={{ y: -4 }}
@@ -156,7 +150,7 @@ export default function TrackerPage() {
               <span className="text-[10px] font-black tracking-widest uppercase text-muted-foreground opacity-60">Status</span>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-black font-headline tracking-tighter">{completedExercises}</p>
+              <p className="text-3xl md:text-4xl font-black font-headline tracking-tighter">{completedExercisesCount}</p>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t.totalExercises}</p>
             </div>
           </motion.div>
@@ -184,58 +178,76 @@ export default function TrackerPage() {
           </motion.div>
         </section>
 
-        {/* Dashboard Actions */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div>
-            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3">
+        {/* Navigation & Controls */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="w-full md:w-auto overflow-x-auto no-scrollbar">
+            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 mb-4">
               <LayoutGrid className="w-6 h-6 text-primary" />
-              {lang === 'en' ? 'Today\'s Arsenal' : 'Arsenal de Hoy'}
+              {t.todayArsenal}
             </h2>
-            <p className="text-sm text-muted-foreground font-medium mt-1">
-              {lang === 'en' ? 'Track your progression, lift by lift.' : 'Registra tu progreso, levantamiento por levantamiento.'}
-            </p>
+            <Tabs 
+              defaultValue="upper" 
+              value={activeGroup} 
+              onValueChange={(val) => setActiveGroup(val as MuscleGroup)}
+              className="w-full"
+            >
+              <TabsList className="bg-secondary/50 p-1 h-12 rounded-2xl border">
+                {Object.keys(t.muscleGroups).map((group) => (
+                  <TabsTrigger 
+                    key={group} 
+                    value={group}
+                    className="rounded-xl px-5 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+                  >
+                    {(t.muscleGroups as any)[group]}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={resetWorkout}
-            className="rounded-xl font-bold border-2 h-11 px-6 hover:bg-destructive hover:text-white hover:border-destructive transition-all active:scale-95"
+            className="rounded-xl font-bold border-2 h-11 px-6 hover:bg-destructive hover:text-white hover:border-destructive transition-all active:scale-95 shrink-0"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             {t.reset}
           </Button>
         </div>
 
-        {/* Exercise Grid - Responsive Adaptive */}
-        <AnimatePresence mode="popLayout">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {exerciseIds.map((exercise, idx) => (
-              <motion.div
+        {/* Exercise Grid */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeGroup}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            {filteredExercises.map((exercise) => (
+              <ExerciseCard
                 key={exercise.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <ExerciseCard
-                  id={exercise.id}
-                  name={exercise.name}
-                  sets={workout[exercise.id] || []}
-                  onAddSet={addSet}
-                  onRemoveSet={removeSet}
-                  translations={{
-                    sets: t.sets,
-                    reps: t.reps,
-                    weight: t.weight,
-                    addSet: t.addSet
-                  }}
-                />
-              </motion.div>
+                id={exercise.id}
+                name={exercise.name[lang]}
+                sets={state.exercises[exercise.id] || []}
+                onAddSet={handleAddSet}
+                onRemoveSet={handleRemoveSet}
+                translations={{
+                  sets: t.sets,
+                  reps: t.reps,
+                  weight: t.weight,
+                  addSet: t.addSet,
+                  timeline: t.timeline,
+                  volume: t.volume
+                }}
+              />
             ))}
-          </div>
+          </motion.div>
         </AnimatePresence>
 
         {/* Empty State */}
-        {completedExercises === 0 && (
+        {completedExercisesCount === 0 && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
