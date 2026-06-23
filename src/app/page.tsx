@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sun, 
@@ -25,16 +24,13 @@ import {
   Trophy,
   Activity,
   Dumbbell,
-  ArrowRight,
-  LayoutGrid,
-  Plus,
   CalendarDays,
   Zap
 } from 'lucide-react';
 import { workoutReducer, initialState, type WeekDay } from '@/store/workout-reducer';
 import { EXERCISE_CATALOG, type MuscleGroup } from '@/lib/exercise-catalog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Calorie factor per kg of volume based on muscle group intensity
 const BURN_FACTORS: Record<MuscleGroup, number> = {
   chest: 0.08,
   back: 0.10,
@@ -140,24 +136,24 @@ export default function TrackerPage() {
   return (
     <div className="min-h-screen bg-background font-body selection:bg-primary/20 overflow-x-hidden">
       <header className="sticky top-0 z-50 glass">
-        <div className="container max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20">
+        <div className="container max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 overflow-hidden shrink-0">
+            <div className="bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20 shrink-0">
               <Flame className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-black uppercase tracking-tight">{t.title}</h1>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">{t.subtitle}</p>
+            <div className="hidden sm:block overflow-hidden">
+              <h1 className="text-xl font-black uppercase tracking-tight truncate">{t.title}</h1>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em] truncate">{t.subtitle}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-hidden">
             <Select 
               value={state.activeDay} 
               onValueChange={(val) => dispatch({ type: 'SET_DAY', day: val as WeekDay })}
             >
-              <SelectTrigger className="w-[140px] rounded-xl font-bold bg-secondary/50 border-none">
-                <CalendarDays className="w-4 h-4 mr-2 text-primary" />
+              <SelectTrigger className="w-[120px] sm:w-[140px] rounded-xl font-bold bg-secondary/50 border-none truncate">
+                <CalendarDays className="w-4 h-4 mr-2 text-primary shrink-0" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -169,10 +165,10 @@ export default function TrackerPage() {
               </SelectContent>
             </Select>
 
-            <Button variant="ghost" size="icon" onClick={toggleLang} className="rounded-xl">
+            <Button variant="ghost" size="icon" onClick={toggleLang} className="rounded-xl shrink-0">
               <Languages className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl shrink-0">
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </Button>
           </div>
@@ -181,59 +177,62 @@ export default function TrackerPage() {
 
       <main className="container max-w-7xl mx-auto px-4 lg:px-8 py-10">
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="p-6 rounded-2xl bg-card border premium-shadow flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-card border premium-shadow flex flex-col justify-between overflow-hidden">
             <div className="flex items-center justify-between mb-8 text-muted-foreground">
-              <Activity className="w-6 h-6" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Day Stats</span>
+              <Activity className="w-6 h-6 shrink-0" />
+              <span className="text-[10px] font-black uppercase tracking-widest truncate">Day Stats</span>
             </div>
-            <div>
-              <p className="text-4xl font-black font-headline tracking-tighter">{completedCount}</p>
-              <p className="text-xs font-bold text-muted-foreground uppercase">{t.totalExercises}</p>
+            <div className="overflow-hidden">
+              <p className="text-4xl font-black font-headline tracking-tighter truncate">{completedCount}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase truncate">{t.totalExercises}</p>
             </div>
           </div>
 
-          {/* Stats Card Divided: Volume & Calories */}
           <div className="md:col-span-2 p-6 rounded-2xl bg-primary text-primary-foreground premium-shadow relative overflow-hidden flex flex-col justify-between">
             <Trophy className="absolute -right-10 -bottom-10 w-64 h-64 opacity-10 rotate-12 pointer-events-none" />
             
-            <div className="flex items-center justify-between relative z-10 opacity-70 mb-6">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5" />
-                <span className="text-[11px] font-black uppercase tracking-widest">{t.days[state.activeDay]}</span>
+            <div className="flex items-center justify-between relative z-10 opacity-70 mb-6 gap-4">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Trophy className="w-5 h-5 shrink-0" />
+                <span className="text-[11px] font-black uppercase tracking-widest truncate">{t.days[state.activeDay]}</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-md">
+              <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-md shrink-0">
                 <Zap className="w-4 h-4 text-white animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Live Performance</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">LIVE</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-2">
-                  <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter">{totalVolume.toLocaleString()}</p>
-                  <span className="text-xl font-bold opacity-60">kg</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10 overflow-hidden">
+              <div className="flex flex-col overflow-hidden">
+                <div className="flex items-baseline gap-2 overflow-hidden">
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter truncate">
+                    {totalVolume.toLocaleString()}
+                  </p>
+                  <span className="text-lg font-bold opacity-60 shrink-0">kg</span>
                 </div>
-                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1">{t.totalVolume}</p>
+                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1 truncate">{t.totalVolume}</p>
               </div>
 
-              <div className="flex flex-col sm:border-l sm:border-white/10 sm:pl-8">
-                <div className="flex items-baseline gap-2">
-                  <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter text-white">{totalCalories.toLocaleString()}</p>
-                  <span className="text-xl font-bold opacity-60">kcal</span>
+              <div className="flex flex-col sm:border-l sm:border-white/10 sm:pl-8 overflow-hidden">
+                <div className="flex items-baseline gap-2 overflow-hidden">
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter text-white truncate">
+                    {totalCalories.toLocaleString()}
+                  </p>
+                  <span className="text-lg font-bold opacity-60 shrink-0">kcal</span>
                 </div>
-                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1">{t.estimatedCalories}</p>
+                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1 truncate">{t.estimatedCalories}</p>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 overflow-hidden">
           <div className="flex-1 overflow-x-auto no-scrollbar">
             <Tabs 
               value={activeGroup} 
               onValueChange={(val) => setActiveGroup(val as MuscleGroup)}
             >
-              <TabsList className="bg-secondary/50 p-1 h-12 rounded-2xl border flex flex-nowrap w-max sm:w-auto">
+              <TabsList className="bg-secondary/50 p-1 h-12 rounded-2xl border flex flex-nowrap w-max sm:w-auto overflow-hidden">
                 {Object.keys(t.muscleGroups).map((group) => (
                   <TabsTrigger 
                     key={group} 
@@ -255,11 +254,11 @@ export default function TrackerPage() {
                   {t.addExercise}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl sm:max-w-md">
+              <DialogContent className="rounded-2xl sm:max-w-md overflow-hidden">
                 <DialogHeader>
                   <DialogTitle className="font-headline font-black uppercase">{t.addExercise}</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-6 py-4">
+                <div className="space-y-6 py-4 overflow-hidden">
                   <div className="space-y-2">
                     <Label className="font-black text-[10px] uppercase tracking-widest">{t.exerciseName}</Label>
                     <Input 
@@ -269,7 +268,7 @@ export default function TrackerPage() {
                       className="h-12 rounded-xl font-bold"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 overflow-hidden">
                     <Label className="font-black text-[10px] uppercase tracking-widest">{t.selectMuscle}</Label>
                     <div className="flex flex-wrap gap-2">
                       {Object.keys(t.muscleGroups).map(g => (
@@ -333,9 +332,9 @@ export default function TrackerPage() {
         </AnimatePresence>
 
         {completedCount === 0 && (
-          <div className="mt-20 flex flex-col items-center text-center opacity-40">
-            <Dumbbell className="w-20 h-20 mb-6" />
-            <h3 className="text-xl font-bold font-headline uppercase mb-2">Arena Vacía</h3>
+          <div className="mt-20 flex flex-col items-center text-center opacity-40 overflow-hidden">
+            <Dumbbell className="w-20 h-20 mb-6 shrink-0" />
+            <h3 className="text-xl font-bold font-headline uppercase mb-2 truncate">Arena Vacía</h3>
             <p className="text-sm font-medium max-w-xs">{t.emptyMessage}</p>
           </div>
         )}
