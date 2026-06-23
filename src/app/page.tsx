@@ -25,7 +25,8 @@ import {
   Activity,
   Dumbbell,
   CalendarDays,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
 import { workoutReducer, initialState, type WeekDay } from '@/store/workout-reducer';
 import { EXERCISE_CATALOG, type MuscleGroup } from '@/lib/exercise-catalog';
@@ -178,7 +179,7 @@ export default function TrackerPage() {
       <main className="container max-w-7xl mx-auto px-4 lg:px-8 py-10">
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="p-6 rounded-2xl bg-card border premium-shadow flex flex-col justify-between overflow-hidden">
-            <div className="flex items-center justify-between mb-8 text-muted-foreground">
+            <div className="flex items-center justify-between mb-8 text-muted-foreground shrink-0">
               <Activity className="w-6 h-6 shrink-0" />
               <span className="text-[10px] font-black uppercase tracking-widest truncate">Day Stats</span>
             </div>
@@ -205,7 +206,7 @@ export default function TrackerPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10 overflow-hidden">
               <div className="flex flex-col overflow-hidden">
                 <div className="flex items-baseline gap-2 overflow-hidden">
-                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter truncate">
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter truncate max-w-full">
                     {totalVolume.toLocaleString()}
                   </p>
                   <span className="text-lg font-bold opacity-60 shrink-0">kg</span>
@@ -215,7 +216,7 @@ export default function TrackerPage() {
 
               <div className="flex flex-col sm:border-l sm:border-white/10 sm:pl-8 overflow-hidden">
                 <div className="flex items-baseline gap-2 overflow-hidden">
-                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter text-white truncate">
+                  <p className="text-4xl sm:text-5xl md:text-6xl font-black font-headline tracking-tighter text-white truncate max-w-full">
                     {totalCalories.toLocaleString()}
                   </p>
                   <span className="text-lg font-bold opacity-60 shrink-0">kcal</span>
