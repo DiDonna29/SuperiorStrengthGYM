@@ -25,18 +25,19 @@ export type WorkoutAction =
   | { type: 'ADD_CUSTOM_EXERCISE'; exercise: ExerciseDefinition }
   | { type: 'LOAD_STATE'; state: WorkoutState };
 
-const emptySession = { exercises: {} };
+// Utilidad para crear una sesión vacía con su propia referencia de objeto
+const createEmptySession = (): DaySession => ({ exercises: {} });
 
 export const initialState: WorkoutState = {
   activeDay: 'monday',
   sessions: {
-    monday: { ...emptySession },
-    tuesday: { ...emptySession },
-    wednesday: { ...emptySession },
-    thursday: { ...emptySession },
-    friday: { ...emptySession },
-    saturday: { ...emptySession },
-    sunday: { ...emptySession },
+    monday: createEmptySession(),
+    tuesday: createEmptySession(),
+    wednesday: createEmptySession(),
+    thursday: createEmptySession(),
+    friday: createEmptySession(),
+    saturday: createEmptySession(),
+    sunday: createEmptySession(),
   },
   customExercises: [],
 };
@@ -49,7 +50,7 @@ export function workoutReducer(state: WorkoutState, action: WorkoutAction): Work
     case 'ADD_SET': {
       const { activeDay } = state;
       const newSet: SetRecord = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 9),
         reps: action.reps,
         weight: action.weight,
       };
@@ -108,7 +109,7 @@ export function workoutReducer(state: WorkoutState, action: WorkoutAction): Work
         ...state,
         sessions: {
           ...state.sessions,
-          [state.activeDay]: { ...emptySession },
+          [state.activeDay]: createEmptySession(),
         },
       };
 

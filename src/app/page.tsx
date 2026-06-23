@@ -12,6 +12,17 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -292,14 +303,36 @@ export default function TrackerPage() {
               </DialogContent>
             </Dialog>
 
-            <Button 
-              variant="outline" 
-              onClick={() => confirm(lang === 'en' ? 'Reset today?' : '¿Reiniciar día?') && dispatch({ type: 'RESET_DAY' })}
-              className="rounded-xl font-bold h-12 px-6 border-2 hover:bg-destructive hover:text-white transition-all"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {t.reset}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl font-bold h-12 px-6 border-2 hover:bg-destructive hover:text-white transition-all"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {t.reset}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-headline font-bold uppercase">{lang === 'en' ? 'Reset Today?' : '¿Reiniciar Día?'}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {lang === 'en' 
+                      ? 'This will delete all exercise logs for today. This action cannot be undone.' 
+                      : 'Esto eliminará todos los registros de ejercicios de hoy. Esta acción no se puede deshacer.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl font-bold">{lang === 'en' ? 'Cancel' : 'Cancelar'}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => dispatch({ type: 'RESET_DAY' })}
+                    className="rounded-xl font-bold bg-destructive hover:bg-destructive/90"
+                  >
+                    {lang === 'en' ? 'Clear Day' : 'Limpiar Día'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 
