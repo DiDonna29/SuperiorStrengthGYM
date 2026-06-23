@@ -1,62 +1,120 @@
 import { type SetRecord } from '@/components/exercise-card';
+import { type ExerciseDefinition, EXERCISE_CATALOG } from '@/lib/exercise-catalog';
 
-export interface WorkoutState {
-  sessionDate: string;
+export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+
+export interface DaySession {
   exercises: {
     [exerciseId: string]: SetRecord[];
   };
 }
 
+export interface WorkoutState {
+  activeDay: WeekDay;
+  sessions: {
+    [key in WeekDay]: DaySession;
+  };
+  customExercises: ExerciseDefinition[];
+}
+
 export type WorkoutAction =
   | { type: 'ADD_SET'; exerciseId: string; reps: number; weight: number }
   | { type: 'REMOVE_SET'; exerciseId: string; setId: string }
-  | { type: 'RESET_WORKOUT' }
-  | { type: 'LOAD_WORKOUT'; state: WorkoutState };
+  | { type: 'RESET_DAY' }
+  | { type: 'SET_DAY'; day: WeekDay }
+  | { type: 'ADD_CUSTOM_EXERCISE'; exercise: ExerciseDefinition }
+  | { type: 'LOAD_STATE'; state: WorkoutState };
+
+const emptySession = { exercises: {} };
 
 export const initialState: WorkoutState = {
-  sessionDate: new Date().toISOString().split('T')[0],
-  exercises: {},
+  activeDay: 'monday',
+  sessions: {
+    monday: { ...emptySession },
+    tuesday: { ...emptySession },
+    wednesday: { ...emptySession },
+    thursday: { ...emptySession },
+    friday: { ...emptySession },
+    saturday: { ...emptySession },
+    sunday: { ...emptySession },
+  },
+  customExercises: [],
 };
 
 export function workoutReducer(state: WorkoutState, action: WorkoutAction): WorkoutState {
   switch (action.type) {
+    case 'SET_DAY':
+      return { ...state, activeDay: action.day };
+
     case 'ADD_SET': {
+      const { activeDay } = state;
       const newSet: SetRecord = {
         id: Math.random().toString(36).substr(2, 9),
         reps: action.reps,
         weight: action.weight,
       };
-      const existingSets = state.exercises[action.exerciseId] || [];
+      const currentSession = state.sessions[activeDay];
+      const existingSets = currentSession.exercises[action.exerciseId] || [];
+      
       return {
         ...state,
-        exercises: {
-          ...state.exercises,
-          [action.exerciseId]: [...existingSets, newSet],
+        sessions: {
+          ...state.sessions,
+          [activeDay]: {
+            ...currentSession,
+            exercises: {
+              ...currentSession.exercises,
+              [action.exerciseId]: [...existingSets, newSet],
+            },
+          },
         },
       };
     }
+
     case 'REMOVE_SET': {
-      const updatedSets = (state.exercises[action.exerciseId] || []).filter(
+      const { activeDay } = state;
+      const currentSession = state.sessions[activeDay];
+      const updatedSets = (currentSession.exercises[action.exerciseId] || []).filter(
         (s) => s.id !== action.setId
       );
-      const newExercises = { ...state.exercises };
+      
+      const newExercises = { ...currentSession.exercises };
       if (updatedSets.length === 0) {
         delete newExercises[action.exerciseId];
       } else {
         newExercises[action.exerciseId] = updatedSets;
       }
+
       return {
         ...state,
-        exercises: newExercises,
+        sessions: {
+          ...state.sessions,
+          [activeDay]: {
+            ...currentSession,
+            exercises: newExercises,
+          },
+        },
       };
     }
-    case 'RESET_WORKOUT':
+
+    case 'ADD_CUSTOM_EXERCISE':
       return {
-        ...initialState,
-        sessionDate: new Date().toISOString().split('T')[0],
+        ...state,
+        customExercises: [...state.customExercises, action.exercise],
       };
-    case 'LOAD_WORKOUT':
+
+    case 'RESET_DAY':
+      return {
+        ...state,
+        sessions: {
+          ...state.sessions,
+          [state.activeDay]: { ...emptySession },
+        },
+      };
+
+    case 'LOAD_STATE':
       return action.state;
+
     default:
       return state;
   }

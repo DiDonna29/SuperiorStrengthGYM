@@ -4,7 +4,17 @@ import React, { useState, useEffect, useReducer, useMemo } from 'react';
 import { translations, type Language } from '@/lib/translations';
 import { ExerciseCard } from '@/components/exercise-card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sun, 
@@ -16,33 +26,37 @@ import {
   Activity,
   Dumbbell,
   ArrowRight,
-  LayoutGrid
+  LayoutGrid,
+  Plus,
+  CalendarDays
 } from 'lucide-react';
-import { workoutReducer, initialState, type WorkoutState } from '@/store/workout-reducer';
+import { workoutReducer, initialState, type WeekDay } from '@/store/workout-reducer';
 import { EXERCISE_CATALOG, type MuscleGroup } from '@/lib/exercise-catalog';
 
 export default function TrackerPage() {
   const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [activeGroup, setActiveGroup] = useState<MuscleGroup>('upper');
+  const [activeGroup, setActiveGroup] = useState<MuscleGroup>('chest');
   const [mounted, setMounted] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const [state, dispatch] = useReducer(workoutReducer, initialState);
+  // Custom exercise form state
+  const [newExName, setNewExName] = useState('');
+  const [newExGroup, setNewExGroup] = useState<MuscleGroup>('chest');
 
+  const [state, dispatch] = useReducer(workoutReducer, initialState);
   const t = translations[lang];
 
   useEffect(() => {
     setMounted(true);
-    const savedWorkout = localStorage.getItem('ss-workout-v3');
+    const savedState = localStorage.getItem('ss-master-state-v1');
     const savedLang = localStorage.getItem('ss-lang');
     const savedTheme = localStorage.getItem('ss-theme');
 
-    if (savedWorkout) {
+    if (savedState) {
       try {
-        dispatch({ type: 'LOAD_WORKOUT', state: JSON.parse(savedWorkout) });
-      } catch (e) {
-        console.error("Failed to load workout", e);
-      }
+        dispatch({ type: 'LOAD_STATE', state: JSON.parse(savedState) });
+      } catch (e) { console.error(e); }
     }
     if (savedLang) setLang(savedLang as Language);
     if (savedTheme) {
@@ -53,7 +67,7 @@ export default function TrackerPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('ss-workout-v3', JSON.stringify(state));
+      localStorage.setItem('ss-master-state-v1', JSON.stringify(state));
     }
   }, [state, mounted]);
 
@@ -70,66 +84,73 @@ export default function TrackerPage() {
     localStorage.setItem('ss-lang', nextLang);
   };
 
-  const handleAddSet = (exerciseId: string, reps: number, weight: number) => {
-    dispatch({ type: 'ADD_SET', exerciseId, reps, weight });
-  };
+  const fullCatalog = useMemo(() => {
+    return [...EXERCISE_CATALOG, ...state.customExercises];
+  }, [state.customExercises]);
 
-  const handleRemoveSet = (exerciseId: string, setId: string) => {
-    dispatch({ type: 'REMOVE_SET', exerciseId, setId });
-  };
-
-  const resetWorkout = () => {
-    const message = lang === 'en' ? 'Clear session?' : '¿Limpiar sesión?';
-    if (confirm(message)) {
-      dispatch({ type: 'RESET_WORKOUT' });
-    }
-  };
+  const currentSession = state.sessions[state.activeDay];
 
   const totalVolume = useMemo(() => {
-    return Object.values(state.exercises).flat().reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
-  }, [state.exercises]);
+    return Object.values(currentSession.exercises).flat().reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
+  }, [currentSession.exercises]);
 
-  const completedExercisesCount = useMemo(() => {
-    return Object.keys(state.exercises).length;
-  }, [state.exercises]);
+  const completedCount = useMemo(() => Object.keys(currentSession.exercises).length, [currentSession.exercises]);
 
   const filteredExercises = useMemo(() => {
-    return EXERCISE_CATALOG.filter(ex => ex.group === activeGroup);
-  }, [activeGroup]);
+    return fullCatalog.filter(ex => ex.group === activeGroup);
+  }, [activeGroup, fullCatalog]);
+
+  const handleAddCustomExercise = () => {
+    if (!newExName) return;
+    const exercise = {
+      id: `custom_${Date.now()}`,
+      name: { en: newExName, es: newExName },
+      group: newExGroup,
+      isCustom: true
+    };
+    dispatch({ type: 'ADD_CUSTOM_EXERCISE', exercise });
+    setNewExName('');
+    setIsDialogOpen(false);
+  };
 
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-background font-body selection:bg-primary/20 overflow-x-hidden">
-      {/* Dynamic Header */}
       <header className="sticky top-0 z-50 glass">
         <div className="container max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-3"
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full animate-pulse" />
-              <div className="relative bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20">
-                <Flame className="w-6 h-6 text-primary-foreground" />
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="relative bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20">
+              <Flame className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight leading-none uppercase">
-                {t.title}
-              </h1>
-              <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.2em] mt-1 opacity-70">
-                {t.subtitle}
-              </p>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-black uppercase tracking-tight">{t.title}</h1>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">{t.subtitle}</p>
             </div>
-          </motion.div>
+          </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleLang} className="rounded-xl hover:bg-secondary">
+            <Select 
+              value={state.activeDay} 
+              onValueChange={(val) => dispatch({ type: 'SET_DAY', day: val as WeekDay })}
+            >
+              <SelectTrigger className="w-[140px] rounded-xl font-bold bg-secondary/50 border-none">
+                <CalendarDays className="w-4 h-4 mr-2 text-primary" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {Object.keys(t.days).map((day) => (
+                  <SelectItem key={day} value={day} className="font-bold">
+                    {(t.days as any)[day]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button variant="ghost" size="icon" onClick={toggleLang} className="rounded-xl">
               <Languages className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl hover:bg-secondary">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl">
               {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </Button>
           </div>
@@ -137,66 +158,46 @@ export default function TrackerPage() {
       </header>
 
       <main className="container max-w-7xl mx-auto px-4 lg:px-8 py-10">
-        {/* Stats Grid */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <motion.div 
-            whileHover={{ y: -4 }}
-            className="md:col-span-1 p-6 rounded-2xl bg-card border premium-shadow flex flex-col justify-between group"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
-                <Activity className="w-6 h-6 text-primary" />
-              </div>
-              <span className="text-[10px] font-black tracking-widest uppercase text-muted-foreground opacity-60">Status</span>
+          <div className="p-6 rounded-2xl bg-card border premium-shadow flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-8 text-muted-foreground">
+              <Activity className="w-6 h-6" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Day Stats</span>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-black font-headline tracking-tighter">{completedExercisesCount}</p>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t.totalExercises}</p>
+              <p className="text-4xl font-black font-headline tracking-tighter">{completedCount}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase">{t.totalExercises}</p>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            whileHover={{ y: -4 }}
-            className="md:col-span-2 p-6 rounded-2xl bg-primary text-primary-foreground premium-shadow flex flex-col justify-between relative overflow-hidden group"
-          >
-            <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <Trophy className="w-64 h-64 rotate-12" />
-            </div>
-            <div className="flex items-center justify-between relative z-10">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Trophy className="w-6 h-6" />
-              </div>
-              <span className="text-[10px] font-black tracking-widest uppercase opacity-60">Session Power</span>
+          <div className="md:col-span-2 p-6 rounded-2xl bg-primary text-primary-foreground premium-shadow flex flex-col justify-between relative overflow-hidden">
+            <Trophy className="absolute -right-10 -bottom-10 w-64 h-64 opacity-10 rotate-12" />
+            <div className="flex items-center justify-between relative z-10 opacity-60">
+              <Trophy className="w-6 h-6" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t.days[state.activeDay]}</span>
             </div>
             <div className="relative z-10">
               <div className="flex items-baseline gap-2">
-                <p className="text-4xl md:text-6xl font-black font-headline tracking-tighter">{totalVolume.toLocaleString()}</p>
+                <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter">{totalVolume.toLocaleString()}</p>
                 <span className="text-xl font-bold opacity-60">kg</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-wider opacity-80">{t.totalVolume}</p>
+              <p className="text-xs font-bold uppercase opacity-80">{t.totalVolume}</p>
             </div>
-          </motion.div>
+          </div>
         </section>
 
-        {/* Navigation & Controls */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="w-full md:w-auto overflow-x-auto no-scrollbar">
-            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 mb-4">
-              <LayoutGrid className="w-6 h-6 text-primary" />
-              {t.todayArsenal}
-            </h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div className="flex-1 overflow-x-auto no-scrollbar">
             <Tabs 
-              defaultValue="upper" 
               value={activeGroup} 
               onValueChange={(val) => setActiveGroup(val as MuscleGroup)}
-              className="w-full"
             >
-              <TabsList className="bg-secondary/50 p-1 h-12 rounded-2xl border">
+              <TabsList className="bg-secondary/50 p-1 h-12 rounded-2xl border flex flex-nowrap w-max sm:w-auto">
                 {Object.keys(t.muscleGroups).map((group) => (
                   <TabsTrigger 
                     key={group} 
                     value={group}
-                    className="rounded-xl px-5 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"
+                    className="rounded-xl px-4 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     {(t.muscleGroups as any)[group]}
                   </TabsTrigger>
@@ -204,25 +205,66 @@ export default function TrackerPage() {
               </TabsList>
             </Tabs>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={resetWorkout}
-            className="rounded-xl font-bold border-2 h-11 px-6 hover:bg-destructive hover:text-white hover:border-destructive transition-all active:scale-95 shrink-0"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            {t.reset}
-          </Button>
+
+          <div className="flex gap-2 shrink-0">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-primary/20">
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t.addExercise}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-2xl sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="font-headline font-black uppercase">{t.addExercise}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="space-y-2">
+                    <Label className="font-black text-[10px] uppercase tracking-widest">{t.exerciseName}</Label>
+                    <Input 
+                      placeholder="e.g. Hammer Strength Row" 
+                      value={newExName} 
+                      onChange={(e) => setNewExName(e.target.value)}
+                      className="h-12 rounded-xl font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-black text-[10px] uppercase tracking-widest">{t.selectMuscle}</Label>
+                    <Select value={newExGroup} onValueChange={(v) => setNewExGroup(v as MuscleGroup)}>
+                      <SelectTrigger className="h-12 rounded-xl font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {Object.keys(t.muscleGroups).map(g => (
+                          <SelectItem key={g} value={g} className="font-bold">{(t.muscleGroups as any)[g]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleAddCustomExercise} className="w-full h-12 rounded-xl font-black uppercase">
+                    Confirm Exercise
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Button 
+              variant="outline" 
+              onClick={() => confirm(lang === 'en' ? 'Reset today?' : '¿Reiniciar día?') && dispatch({ type: 'RESET_DAY' })}
+              className="rounded-xl font-bold h-12 px-6 border-2 hover:bg-destructive hover:text-white transition-all"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {t.reset}
+            </Button>
+          </div>
         </div>
 
-        {/* Exercise Grid */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeGroup}
-            initial={{ opacity: 0, y: 20 }}
+            key={`${state.activeDay}-${activeGroup}`}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {filteredExercises.map((exercise) => (
@@ -230,9 +272,9 @@ export default function TrackerPage() {
                 key={exercise.id}
                 id={exercise.id}
                 name={exercise.name[lang]}
-                sets={state.exercises[exercise.id] || []}
-                onAddSet={handleAddSet}
-                onRemoveSet={handleRemoveSet}
+                sets={currentSession.exercises[exercise.id] || []}
+                onAddSet={(id, r, w) => dispatch({ type: 'ADD_SET', exerciseId: id, reps: r, weight: w })}
+                onRemoveSet={(eid, sid) => dispatch({ type: 'REMOVE_SET', exerciseId: eid, setId: sid })}
                 translations={{
                   sets: t.sets,
                   reps: t.reps,
@@ -246,29 +288,15 @@ export default function TrackerPage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Empty State */}
-        {completedExercisesCount === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-20 flex flex-col items-center text-center max-w-md mx-auto"
-          >
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-              <Dumbbell className="w-10 h-10 text-muted-foreground/40" />
-            </div>
-            <h3 className="text-xl font-bold font-headline mb-2">{lang === 'en' ? 'Empty Arena' : 'Arena Vacía'}</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-              {t.emptyMessage}
-            </p>
-            <Button className="rounded-full px-8 h-12 font-bold shadow-lg shadow-primary/20 group">
-              {lang === 'en' ? 'Start Training' : 'Empezar Entrenamiento'}
-              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </motion.div>
+        {completedCount === 0 && (
+          <div className="mt-20 flex flex-col items-center text-center opacity-40">
+            <Dumbbell className="w-20 h-20 mb-6" />
+            <h3 className="text-xl font-bold font-headline uppercase mb-2">Arena Vacía</h3>
+            <p className="text-sm font-medium max-w-xs">{t.emptyMessage}</p>
+          </div>
         )}
       </main>
 
-      {/* Persistence Notification */}
       <motion.div 
         initial={{ y: 100 }}
         animate={{ y: 0 }}

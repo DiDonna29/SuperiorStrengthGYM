@@ -1,4 +1,4 @@
-export type MuscleGroup = 'upper' | 'legs' | 'back' | 'chest' | 'arms' | 'cardio';
+export type MuscleGroup = 'shoulders' | 'chest' | 'back' | 'legs' | 'biceps' | 'triceps' | 'cardio';
 
 export interface ExerciseDefinition {
   id: string;
@@ -7,12 +7,13 @@ export interface ExerciseDefinition {
     es: string;
   };
   group: MuscleGroup;
+  isCustom?: boolean;
 }
 
 export const EXERCISE_CATALOG: ExerciseDefinition[] = [
-  // Upper / Shoulders
-  { id: 'shoulder_press', name: { en: 'Shoulder Press Machine', es: 'Prensa de Hombros' }, group: 'upper' },
-  { id: 'lateral_raise', name: { en: 'Lateral Raises', es: 'Elevaciones Laterales' }, group: 'upper' },
+  // Shoulders
+  { id: 'shoulder_press', name: { en: 'Shoulder Press Machine', es: 'Prensa de Hombros' }, group: 'shoulders' },
+  { id: 'lateral_raise', name: { en: 'Lateral Raises', es: 'Elevaciones Laterales' }, group: 'shoulders' },
   
   // Chest
   { id: 'bench_press', name: { en: 'Bench Press', es: 'Press de Banca' }, group: 'chest' },
@@ -30,10 +31,15 @@ export const EXERCISE_CATALOG: ExerciseDefinition[] = [
   { id: 'leg_extension', name: { en: 'Leg Extension', es: 'Extensión de Piernas' }, group: 'legs' },
   { id: 'leg_curl', name: { en: 'Leg Curl', es: 'Curl de Piernas' }, group: 'legs' },
 
-  // Arms
-  { id: 'bicep_curl', name: { en: 'Dumbbell Bicep Curls', es: 'Curl de Bíceps' }, group: 'arms' },
-  { id: 'tricep_pushdown', name: { en: 'Tricep Pushdown', es: 'Extensión de Tríceps' }, group: 'arms' },
-  { id: 'hammer_curl', name: { en: 'Hammer Curls', es: 'Curl Martillo' }, group: 'arms' },
+  // Biceps
+  { id: 'bicep_curl', name: { en: 'Dumbbell Bicep Curls', es: 'Curl de Bíceps' }, group: 'biceps' },
+  { id: 'hammer_curl', name: { en: 'Hammer Curls', es: 'Curl Martillo' }, group: 'biceps' },
+  { id: 'preacher_curl', name: { en: 'Preacher Curl', es: 'Curl Predicador' }, group: 'biceps' },
+
+  // Triceps
+  { id: 'tricep_pushdown', name: { en: 'Tricep Pushdown', es: 'Extensión de Tríceps' }, group: 'triceps' },
+  { id: 'skull_crusher', name: { en: 'Skull Crushers', es: 'Press Francés' }, group: 'triceps' },
+  { id: 'dips', name: { en: 'Dips', es: 'Fondos' }, group: 'triceps' },
 
   // Cardio
   { id: 'treadmill', name: { en: 'Treadmill', es: 'Cinta de Correr' }, group: 'cardio' },
