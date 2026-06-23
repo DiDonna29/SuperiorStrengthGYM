@@ -1,0 +1,50 @@
+export type Language = 'en' | 'es';
+
+export const translations = {
+  en: {
+    title: 'SuperiorStrength',
+    subtitle: 'Upper Body Tracker',
+    pullUps: 'Pull-ups',
+    benchPress: 'Bench Press',
+    shoulderPress: 'Shoulder Press',
+    latPulldown: 'Lat Pulldown',
+    bicepCurls: 'Bicep Curls',
+    tricepExtensions: 'Tricep Extensions',
+    sets: 'Sets',
+    reps: 'Reps',
+    weight: 'Weight (kg)',
+    addSet: 'Add Set',
+    sessionSummary: 'Session Summary',
+    totalExercises: 'Exercises Completed',
+    totalVolume: 'Total Volume',
+    reset: 'Reset Today',
+    emptyMessage: 'Ready to crush it? Log your first set below.',
+    theme: 'Theme',
+    language: 'Language',
+    save: 'Progress Saved Locally',
+    complete: 'Complete Session'
+  },
+  es: {
+    title: 'SuperiorStrength',
+    subtitle: 'Rastreador de Tren Superior',
+    pullUps: 'Dominadas',
+    benchPress: 'Press de Banca',
+    shoulderPress: 'Press de Hombro',
+    latPulldown: 'Jalón al Pecho',
+    bicepCurls: 'Curl de Bíceps',
+    tricepExtensions: 'Extensión de Tríceps',
+    sets: 'Series',
+    reps: 'Reps',
+    weight: 'Peso (kg)',
+    addSet: 'Añadir Serie',
+    sessionSummary: 'Resumen de la Sesión',
+    totalExercises: 'Ejercicios Completados',
+    totalVolume: 'Volumen Total',
+    reset: 'Reiniciar Hoy',
+    emptyMessage: '¿Listo para darle con todo? Registra tu primera serie abajo.',
+    theme: 'Tema',
+    language: 'Idioma',
+    save: 'Progreso Guardado Localmente',
+    complete: 'Terminar Sesión'
+  }
+};

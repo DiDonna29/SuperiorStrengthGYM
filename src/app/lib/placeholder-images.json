@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "pull-ups",
+      "description": "Person performing pull ups",
+      "imageUrl": "https://picsum.photos/seed/pullups/400/300",
+      "imageHint": "pull-ups workout"
+    },
+    {
+      "id": "bench-press",
+      "description": "Person performing bench press",
+      "imageUrl": "https://picsum.photos/seed/benchpress/400/300",
+      "imageHint": "bench-press workout"
+    },
+    {
+      "id": "shoulder-press",
+      "description": "Person performing shoulder press",
+      "imageUrl": "https://picsum.photos/seed/shoulder/400/300",
+      "imageHint": "shoulder-press workout"
+    }
+  ]
+}
