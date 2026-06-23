@@ -28,10 +28,22 @@ import {
   ArrowRight,
   LayoutGrid,
   Plus,
-  CalendarDays
+  CalendarDays,
+  Zap
 } from 'lucide-react';
 import { workoutReducer, initialState, type WeekDay } from '@/store/workout-reducer';
 import { EXERCISE_CATALOG, type MuscleGroup } from '@/lib/exercise-catalog';
+
+// Calorie factor per kg of volume based on muscle group intensity
+const BURN_FACTORS: Record<MuscleGroup, number> = {
+  chest: 0.08,
+  back: 0.10,
+  legs: 0.15,
+  shoulders: 0.07,
+  biceps: 0.05,
+  triceps: 0.05,
+  cardio: 0.12
+};
 
 export default function TrackerPage() {
   const [lang, setLang] = useState<Language>('en');
@@ -40,7 +52,6 @@ export default function TrackerPage() {
   const [mounted, setMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // Custom exercise form state
   const [newExName, setNewExName] = useState('');
   const [newExGroup, setNewExGroup] = useState<MuscleGroup>('chest');
 
@@ -93,6 +104,17 @@ export default function TrackerPage() {
   const totalVolume = useMemo(() => {
     return Object.values(currentSession.exercises).flat().reduce((acc, curr) => acc + (curr.reps * curr.weight), 0);
   }, [currentSession.exercises]);
+
+  const totalCalories = useMemo(() => {
+    let total = 0;
+    Object.entries(currentSession.exercises).forEach(([exerciseId, sets]) => {
+      const exercise = fullCatalog.find(ex => ex.id === exerciseId);
+      const factor = exercise ? BURN_FACTORS[exercise.group] : 0.05;
+      const volume = sets.reduce((acc, set) => acc + (set.reps * set.weight), 0);
+      total += volume * factor;
+    });
+    return Math.round(total);
+  }, [currentSession.exercises, fullCatalog]);
 
   const completedCount = useMemo(() => Object.keys(currentSession.exercises).length, [currentSession.exercises]);
 
@@ -170,18 +192,37 @@ export default function TrackerPage() {
             </div>
           </div>
 
-          <div className="md:col-span-2 p-6 rounded-2xl bg-primary text-primary-foreground premium-shadow flex flex-col justify-between relative overflow-hidden">
-            <Trophy className="absolute -right-10 -bottom-10 w-64 h-64 opacity-10 rotate-12" />
-            <div className="flex items-center justify-between relative z-10 opacity-60">
-              <Trophy className="w-6 h-6" />
-              <span className="text-[10px] font-black uppercase tracking-widest">{t.days[state.activeDay]}</span>
-            </div>
-            <div className="relative z-10">
-              <div className="flex items-baseline gap-2">
-                <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter">{totalVolume.toLocaleString()}</p>
-                <span className="text-xl font-bold opacity-60">kg</span>
+          {/* Stats Card Divided: Volume & Calories */}
+          <div className="md:col-span-2 p-6 rounded-2xl bg-primary text-primary-foreground premium-shadow relative overflow-hidden flex flex-col justify-between">
+            <Trophy className="absolute -right-10 -bottom-10 w-64 h-64 opacity-10 rotate-12 pointer-events-none" />
+            
+            <div className="flex items-center justify-between relative z-10 opacity-70 mb-6">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                <span className="text-[11px] font-black uppercase tracking-widest">{t.days[state.activeDay]}</span>
               </div>
-              <p className="text-xs font-bold uppercase opacity-80">{t.totalVolume}</p>
+              <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full backdrop-blur-md">
+                <Zap className="w-4 h-4 text-white animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Live Performance</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter">{totalVolume.toLocaleString()}</p>
+                  <span className="text-xl font-bold opacity-60">kg</span>
+                </div>
+                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1">{t.totalVolume}</p>
+              </div>
+
+              <div className="flex flex-col sm:border-l sm:border-white/10 sm:pl-8">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-5xl md:text-6xl font-black font-headline tracking-tighter text-white">{totalCalories.toLocaleString()}</p>
+                  <span className="text-xl font-bold opacity-60">kcal</span>
+                </div>
+                <p className="text-[11px] font-black uppercase opacity-80 tracking-widest mt-1">{t.estimatedCalories}</p>
+              </div>
             </div>
           </div>
         </section>
@@ -230,16 +271,19 @@ export default function TrackerPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="font-black text-[10px] uppercase tracking-widest">{t.selectMuscle}</Label>
-                    <Select value={newExGroup} onValueChange={(v) => setNewExGroup(v as MuscleGroup)}>
-                      <SelectTrigger className="h-12 rounded-xl font-bold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {Object.keys(t.muscleGroups).map(g => (
-                          <SelectItem key={g} value={g} className="font-bold">{(t.muscleGroups as any)[g]}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.keys(t.muscleGroups).map(g => (
+                        <Button 
+                          key={g}
+                          variant={newExGroup === g ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setNewExGroup(g as MuscleGroup)}
+                          className="rounded-lg text-[10px] uppercase font-black"
+                        >
+                          {(t.muscleGroups as any)[g]}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                   <Button onClick={handleAddCustomExercise} className="w-full h-12 rounded-xl font-black uppercase">
                     Confirm Exercise
